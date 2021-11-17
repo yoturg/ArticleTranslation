@@ -718,8 +718,6 @@ function traverser(ast, visitor) {
     }
   }
 
-  // Finally we kickstart the traverser by calling `traverseNode` with our ast
-  // with no `parent` because the top level of the AST doesn't have a parent.
   // 最后，我们通过调用traverseNode并传入AST来启动，由于AST的上层没有父级，AST没有parent
   traverseNode(ast, null);
 }
@@ -727,17 +725,16 @@ function traverser(ast, visitor) {
 /**
  * ============================================================================
  *                                   ⁽(◍˃̵͈̑ᴗ˂̵͈̑)⁽
- *                              THE TRANSFORMER!!!
+ *                              THE TRANSFORMER(转换器)!!!
  * ============================================================================
  */
 
 /**
- * Next up, the transformer. Our transformer is going to take the AST that we
- * have built and pass it to our traverser function with a visitor and will
- * create a new ast.
+ * 接下来是转换器( transformer ). 我们的转换器将构建出来的AST和一个vistor（访客）传递给
+ * traverser函数，并创建一个新的AST
  *
  * ----------------------------------------------------------------------------
- *   Original AST                     |   Transformed AST
+ *   原来的 AST                        |   转换后的 AST
  * ----------------------------------------------------------------------------
  *   {                                |   {
  *     type: 'Program',               |     type: 'Program',
@@ -765,41 +762,36 @@ function traverser(ast, visitor) {
  *                                    |             type: 'NumberLiteral',
  *                                    |             value: '2'
  *                                    |           }]
- *  (sorry the other one is longer.)  |         }
+ *  (抱歉，另一个AST长一点)              |         }
  *                                    |       }
  *                                    |     }]
  *                                    |   }
  * ----------------------------------------------------------------------------
  */
 
-// So we have our transformer function which will accept the lisp ast.
+// 因此我们有了transformer方法，他接受一个lisp的AST
 function transformer(ast) {
 
-  // We'll create a `newAst` which like our previous AST will have a program
-  // node.
+  // 我们创建一个newAst，他跟前面的ast很相似，都有一个Program结点
   let newAst = {
     type: 'Program',
     body: [],
   };
 
-  // Next I'm going to cheat a little and create a bit of a hack. We're going to
-  // use a property named `context` on our parent nodes that we're going to push
-  // nodes to their parent's `context`. Normally you would have a better
-  // abstraction than this, but for our purposes this keeps things simple.
+  // 接下来，我要作一下弊，用一点hack方法。我们在原来的ast上设置一个context属性，让这个属性指向
+  // 新生成的Ast结点。通常你可能会有比这个更好的抽象处理，但就我们的目的而言，这能让事情变得简单
   //
-  // Just take note that the context is a reference *from* the old ast *to* the
-  // new ast.
+  // 请注意，context是旧的ast到新的ast的一个引用
   ast._context = newAst.body;
 
-  // We'll start by calling the traverser function with our ast and a visitor.
+  // 我们首先用ast和一个visitor来调用traverser函数
   traverser(ast, {
 
-    // The first visitor method accepts any `NumberLiteral`
+    // 第一个visitor方法接受任意NumberLiteral
     NumberLiteral: {
-      // We'll visit them on enter.
+      // 我们在enter的时候访问他
       enter(node, parent) {
-        // We'll create a new node also named `NumberLiteral` that we will push to
-        // the parent context.
+        // 我们会创建一个名为NumberLiteral的新节点，并把他push到ast的context
         parent._context.push({
           type: 'NumberLiteral',
           value: node.value,
@@ -807,7 +799,7 @@ function transformer(ast) {
       },
     },
 
-    // Next we have `StringLiteral`
+    // 接下来我们处理StringLiteral
     StringLiteral: {
       enter(node, parent) {
         parent._context.push({
@@ -817,12 +809,11 @@ function transformer(ast) {
       },
     },
 
-    // Next up, `CallExpression`.
+    // 接下来， CallExpression
     CallExpression: {
       enter(node, parent) {
 
-        // We start creating a new node `CallExpression` with a nested
-        // `Identifier`.
+        // 我们开始创建一个带有嵌套标识符Identifier的新节点.
         let expression = {
           type: 'CallExpression',
           callee: {
@@ -832,33 +823,28 @@ function transformer(ast) {
           arguments: [],
         };
 
-        // Next we're going to define a new context on the original
-        // `CallExpression` node that will reference the `expression`'s arguments
-        // so that we can push arguments.
+        // 接下来我们在原来的结点上定义一个context，让他指向新节点的arguments，这样方便我们push参数
         node._context = expression.arguments;
 
-        // Then we're going to check if the parent node is a `CallExpression`.
-        // If it is not...
+        // 然后我们要检查父节点是不是一个CallExpression。
+        // 如果不是的话...
         if (parent.type !== 'CallExpression') {
 
-          // We're going to wrap our `CallExpression` node with an
-          // `ExpressionStatement`. We do this because the top level
-          // `CallExpression` in JavaScript are actually statements.
+          // 我们用ExpressionStatement来包装ExpressionStatement结点，
+          // 这样做是因为在JavaScript里，顶层的CallExpression实际上是声明
           expression = {
             type: 'ExpressionStatement',
             expression: expression,
           };
         }
 
-        // Last, we push our (possibly wrapped) `CallExpression` to the `parent`'s
-        // `context`.
+        // 最后，我们push CallExpression（可能是被包装出来的）结点到parent的context上
         parent._context.push(expression);
       },
     }
   });
 
-  // At the end of our transformer function we'll return the new ast that we
-  // just created.
+  // 在转换器的结尾，我们返回刚刚创建的ast
   return newAst;
 }
 
