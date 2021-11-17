@@ -466,7 +466,6 @@ function tokenizer(input) {
         char = input[++current];
       }
 
-      // And pushing that value as a token with the type `name` and continuing.
       // 然后把value作为类型为name的token push到tokens数组里并进入下一个循环
       tokens.push({ type: 'name', value });
 
@@ -851,40 +850,36 @@ function transformer(ast) {
 /**
  * ============================================================================
  *                               ヾ（〃＾∇＾）ﾉ♪
- *                            THE CODE GENERATOR!!!!
+ *                            THE CODE GENERATOR(代码生成器)!!!!
  * ============================================================================
  */
 
 /**
- * Now let's move onto our last phase: The Code Generator.
+ * 现在让我们进入最后一个阶段：代码生成器。
  *
- * Our code generator is going to recursively call itself to print each node in
- * the tree into one giant string.
+ * 代码生成器会递归调用自身，把权贵的每个节点打印成一串巨大的字符串
  */
 
 function codeGenerator(node) {
 
-  // We'll break things down by the `type` of the `node`.
+  // 我们按结点的type类型进行分解
   switch (node.type) {
 
-    // If we have a `Program` node. We will map through each node in the `body`
-    // and run them through the code generator and join them with a newline.
+    // 如果这是一个Program结点，我们会用map遍历每个结点，并用代码生成器处理每个结点，并且用
+    // 换行码将他们连接起来
     case 'Program':
       return node.body.map(codeGenerator)
         .join('\n');
 
-    // For `ExpressionStatement` we'll call the code generator on the nested
-    // expression and we'll add a semicolon...
+    // 对于ExpressionStatement，我们用codeGenerator进行嵌套调用，然后在结尾生成一个分号
     case 'ExpressionStatement':
       return (
         codeGenerator(node.expression) +
-        ';' // << (...because we like to code the *correct* way)
+        ';' // << (...因为我们喜欢‘正确的’编码方式)
       );
 
-    // For `CallExpression` we will print the `callee`, add an open
-    // parenthesis, we'll map through each node in the `arguments` array and run
-    // them through the code generator, joining them with a comma, and then
-    // we'll add a closing parenthesis.
+    // 对于CallExpression， 我们会打印callee，添加左括号，然后用map遍历arguments数组，并用
+    // codeGenerator处理，将处理完的arauments数组用逗号连接，最后添加一个右括号
     case 'CallExpression':
       return (
         codeGenerator(node.callee) +
@@ -894,19 +889,19 @@ function codeGenerator(node) {
         ')'
       );
 
-    // For `Identifier` we'll just return the `node`'s name.
+    // 对于Identifier，我们直接返回结点的name
     case 'Identifier':
       return node.name;
 
-    // For `NumberLiteral` we'll just return the `node`'s value.
+    // 对于NumberLiteral， 我们直接返回结点的value
     case 'NumberLiteral':
       return node.value;
 
-    // For `StringLiteral` we'll add quotations around the `node`'s value.
+    // 对于StringLiteral, 在结点的value前后添加双绰号
     case 'StringLiteral':
       return '"' + node.value + '"';
 
-    // And if we haven't recognized the node, we'll throw an error.
+    // 如果没有识别出这个节点，我们抛出一个异常
     default:
       throw new TypeError(node.type);
   }
@@ -920,8 +915,7 @@ function codeGenerator(node) {
  */
 
 /**
- * FINALLY! We'll create our `compiler` function. Here we will link together
- * every part of the pipeline.
+ * 最后，我们创建我compiler函数，在这里，把所有流水线串起来
  *
  *   1. input  => tokenizer   => tokens
  *   2. tokens => parser      => ast
@@ -935,7 +929,7 @@ function compiler(input) {
   let newAst = transformer(ast);
   let output = codeGenerator(newAst);
 
-  // and simply return the output!
+  // 简单地返回输出
   return output;
 }
 
@@ -946,7 +940,7 @@ function compiler(input) {
  * ============================================================================
  */
 
-// Now I'm just exporting everything...
+// 现在，我们直接导出所有方法
 module.exports = {
   tokenizer,
   parser,
